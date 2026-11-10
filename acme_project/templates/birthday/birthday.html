@@ -2,7 +2,7 @@
 {% load django_bootstrap5 %}
 
 {% block content %}
-    {% with data=form.instance %}
+    {% with data=form.instance|default:object %}
         {% if '/edit/' in request.path %}
             <h1>Редактирование дня рождения</h1>
         {% elif '/delete/' in request.path %}
