@@ -1,10 +1,10 @@
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, DeleteView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 from .utils import calculate_birthday_countdown
 from .forms import BirthdayForm
 from .models import Birthday
-
 
 class BirthdayMixin:
     model = Birthday
@@ -26,10 +26,17 @@ class BirthdayFormMixin:
     form_class = BirthdayForm
     template_name = 'birthday/birthday.html'
 
-class BirthdayCreateView(BirthdayMixin, BirthdayFormMixin, CreateView):
-    pass
+class OnlyAuthorMixin(UserPassesTestMixin):
+    def test_func(self):
+        object = self.get_object()
+        return object.author == self.request.user
 
-class BirthdayUpdateView(BirthdayMixin, BirthdayFormMixin, UpdateView):
+class BirthdayCreateView(LoginRequiredMixin, BirthdayMixin, BirthdayFormMixin, CreateView):
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
+class BirthdayUpdateView(LoginRequiredMixin, OnlyAuthorMixin, BirthdayMixin, BirthdayFormMixin, UpdateView):
     pass
 
 # def birthday(request, pk=None):
@@ -52,7 +59,7 @@ class BirthdayListView(ListView):
     ordering = 'id'
     paginate_by = 10
 
-class BirthdayDeleteView(BirthdayMixin, DeleteView):
+class BirthdayDeleteView(LoginRequiredMixin, OnlyAuthorMixin, BirthdayMixin, DeleteView):
     template_name = 'birthday/birthday.html'
     success_url = reverse_lazy('birthday:list')
 
